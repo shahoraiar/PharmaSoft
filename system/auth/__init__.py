@@ -17,20 +17,35 @@ from django.contrib.auth.hashers import check_password
 
 #     return user
 
-def authenticate_user(request, email, password):
-    context = {}
-    try:
-        user = User.objects.get(email=email)
-    except User.DoesNotExist:
-        context['errors'] = 'email not found'
-        return None
-    try:
-        user = User.objects.get(email=email, password=password)
-    except Exception:
-        context['errors'] = 'password wrong'
-        messages.error(request, 'Cannot save. Please fill up the required inputs.')
+# def authenticate_user(request, email, password):
+#     context = {}
+#     try:
+#         user = User.objects.get(email=email)
+#     except User.DoesNotExist:
+#         context['errors'] = 'email not found'
+#         return None
+#     try:
+#         user = User.objects.get(email=email, password=password)
+#     except Exception:
+#         context['errors'] = 'password wrong'
+#         messages.error(request, 'Cannot save. Please fill up the required inputs.')
     
-    return user
+#     return user
+
+def authenticate_user(request, email, password):
+    try:
+        # Get the user by email
+        user = User.objects.get(email=email)
+        print('user passwrod : ', user.password)
+        # Check the password
+        if user.password == password:  # Securely compare hashed password
+            return user
+        else:
+            messages.error(request, 'Incorrect password.')
+            return None
+    except User.DoesNotExist:
+        messages.error(request, 'Email not found.')
+        return None
 
 def authenticate_user_by_id(id=None):
     try:

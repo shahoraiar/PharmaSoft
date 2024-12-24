@@ -11,6 +11,11 @@ from apps.payment.sslcommerz import sslcommerz_payment_gateway_purchase
 from apps.payment.models import Payment
 from apps.supplier.models import Supplier
 from datetime import datetime
+import random
+import string              
+from django.contrib.auth.decorators import login_required
+from apps.user.models import User
+from django.contrib import messages
 # Create your views here.
 def generate_invoice_no():
     # Get the current year (last two digits) and month
@@ -19,27 +24,53 @@ def generate_invoice_no():
 
     # Retrieve the last Payment object's ID, default to 0 if no payments exist
     try:
-        last_payment = Payment.objects.latest('id')
-        last_id = last_payment.id
+        last_payment = Purchase.objects.latest('id')
+        last_id = last_payment.id + 1
     except Payment.DoesNotExist:
-        last_id = 0
+        last_id = 1
 
     # Increment the last ID and pad it with leading zeros
+    print('last id : ', last_id)
     new_id = last_id + 1
     padded_id = str(new_id).zfill(8)  # Ensures the ID is always 8 digits
 
     # Return the generated invoice number
-    return f"{current_year}{current_month}{padded_id}"
+    return f"PR-{current_year}{current_month}{padded_id}"
 
-def purchase(request):
+def purchase_list(request):
+    if request.method == 'POST':
+        data = Purchase.objects.all()
+        print('Purchase data : ', data)
+        response_data, page_data = paginate_data(Purchase, data, request)
+        count = 0
+        for data in page_data:
+            count += 1
+            action_html = f'<a href="/purchase/purchase_print/{data.invoice_no}/" style="margin-right: 5px; font-size: 22px;"><i class="fas fa-eye"></i></a>'
+            response_data['data'].append({
+                'count' : count,
+                'id' : data.id,
+                'supplier_name' : data.supplier.name,
+                'invoice_no' : data.invoice_no,
+                'medicine_info' : data.medicine_info.name,
+                'batch_id' : data.batch_id,
+                'expire_date' : data.expire_date,
+                'total_quantity' : data.total_quantity,
+                'supplier_price' : data.supplier_price,
+                'total_price' : data.total_price,
+                'paid_amount' : data.paid_amount,
+                'due_amount' : data.due_amount,
+                'action' : mark_safe(action_html),
+            })
+        return JsonResponse(response_data)
+    return render(request, 'backend/main/purchase/purchase_list.html')
+
+# add purchase
+def add_purchase(request):
     context={}
-    # print('purchase sessionkey : ', request.session.session_key)
     supplier = Supplier.objects.all()
     leaf = Leaf.objects.all()
-    # invoice_no = '2411000000001'
-    
-    # Generate the invoice number
-    invoice_no = generate_invoice_no() # e.g., '241100000001'
+   
+    invoice_no = generate_invoice_no() 
     payment_types = {'1':'handcash', '2':'sslcommerz'}
     context = {
         'payment_type': payment_types,
@@ -49,12 +80,8 @@ def purchase(request):
         'transaction_type': 'purchase'
     }
     print('purchase sessionkey : ', request.session.session_key)
-    return render(request, 'backend/main/purchase/add_purchase1.html', context=context)
+    return render(request, 'backend/main/purchase/add_purchase.html', context=context)
 
-
-import random
-import string              
-from django.contrib.auth.decorators import login_required
 def unique_transaction_id_generator(size=10, chars=string.ascii_uppercase + string.digits):
     return ''.join(random.choice(chars) for _ in range(size))
 
@@ -70,6 +97,8 @@ def purchase_process(request):
         invoice_no = request.POST.get('invoice_no')
         details = request.POST.get('details')
         paid_amount = request.POST.get('paid_amount')
+        billing_type = request.POST.get('billing_type')
+        print('billing type : ', billing_type)
         
         if customer_id : 
             customer = Supplier.objects.get( id= customer_id)
@@ -85,6 +114,11 @@ def purchase_process(request):
         print('details : ', details)
         print('paid_amount : ', paid_amount)
 
+        if payment_type == '1':  # Handcash
+            print('handcash payment')
+            messages.success = 'Purchase added successfully'
+            return redirect('payment_list')
+            
         if payment_type == '2':  # SSLCommerz
             transaction_id = unique_transaction_id_generator()
             transaction_data = {
@@ -93,6 +127,7 @@ def purchase_process(request):
                 'details': details,
                 'paid_amount': paid_amount,
                 'transaction_id': transaction_id,
+                'billing_type': billing_type,
                 'payment_type': 'sslcommerz'
             }
             request.session['transaction_data'] = transaction_data
@@ -117,13 +152,7 @@ def purchase_success_view(request):
         status = 1
     else : 
         status = 0
-    # customer_name = data['value_a'] 
-    # invoice_no = data['value_b'] 
-    # details = data['value_c'] 
-    # paid_amount = data['value_d'] 
-    # transaction_id = data['value_e'] 
-    # payment_type = data['value_f'] 
-    # transaction_type = data['value_g']
+    
     customer_name = data.get('value_a', None)
     invoice_no = data.get('value_b', None)
     details = data.get('value_c', None)
@@ -149,36 +178,7 @@ def purchase_success_view(request):
             status=status,
         )
     
-    return redirect('add_purchase')
-
-
-# def purchase_success_view(request):
-#     print('------- payment success view ---------')
-#     print('purchase_success_view sessionkey : ', request.session.session_key)
-#     # transaction_id = data['tran_id']
-#     transaction_data = request.session.get('transaction_data', {})
-#     invoice_no = transaction_data.get('invoice_no')
-#     customer_name = transaction_data.get('customer_name')
-#     paid_amount = transaction_data.get('paid_amount')
-
-#     print('---------payment success info-----------')
-#     # print('payment_type : ', payment_type)
-#     print('customer_name : ', customer_name)
-#     print('invoice_no : ', invoice_no)
-#     # print('details : ', details)
-#     print('paid_amount : ', paid_amount)
-
-#     # Save payment details
-#     # payment = Payment(
-#     #     payment_id=transaction_id,
-#     #     payment_method=data['card_issuer'],
-#     #     amount_paid=paid_amount,
-#     #     status=data['status'],
-#     #     customer_name=customer_name,
-#     #     invoice_no=invoice_no,
-#     # )
-#     # payment.save()
-#     return redirect('add_purchase')
+    return redirect('payment_list')
 
 
 def save_purchase_data(request):
@@ -196,6 +196,7 @@ def save_purchase_data(request):
         paid_amount = request.POST.get("paid_amount")
         due_amount = request.POST.get("due_amount")
         box_quantity = request.POST.get("box_quantity")
+        expire_date = request.POST.get("expire_date")
 
         # Debug: Print the received totals
         print("Sub Total:", sub_total)
@@ -213,6 +214,7 @@ def save_purchase_data(request):
         supplier_prices = request.POST.getlist("supplier_price[]")
         box_mrps = request.POST.getlist("box_mrp[]")
         total_prices = request.POST.getlist("total_price[]")
+        details = request.POST.getlist("details[]")
 
         # Debug: Print the received data
         print("Supplier ID:", supplier_id)
@@ -230,13 +232,9 @@ def save_purchase_data(request):
         # Store the purchase data
         for i in range(len(medicine_names)):
             try:
-                # Get related Medicine and Leaf objects
                 medicine = Medicine.objects.get(id=medicine_names[i])
-                # save the medicine stock db = box_quantity
-                # Assuming Leaf is selected or has a default value
-                leaf = Leaf.objects.first()  # Or set a logic to fetch the correct leaf
+                leaf = Leaf.objects.first() 
 
-                # Create a new Purchase record
                 purchase = Purchase(
                     supplier=supplier,
                     invoice_no=invoice_no,
@@ -252,58 +250,31 @@ def save_purchase_data(request):
                     box_mrp=box_mrps[i],
                     total_price=total_prices[i],
                     paid_amount=paid_amount,
-                    due_amount=due_amount
+                    due_amount=due_amount,
+                    admin_id = User.objects.get(id=request.user.id)
                 )
 
-                # Save the purchase to the database
                 purchase.save()
 
                 medicine.stock += int(total_quantities[i])
+                medicine.expire_date = expire_dates[i]
+                medicine.batch = batch_ids[i]
                 medicine.save()
 
             except Medicine.DoesNotExist:
                 return JsonResponse({"status": "error", "message": f"Medicine with ID {medicine_names[i]} not found."})
 
-        # Return a response after saving the data
-        return redirect('purchase_list')
+        return redirect('purchase_print', invoice_no=invoice_no)
 
-    # If not a POST request, return an error
     return JsonResponse({"status": "error", "message": "Invalid request method."})
 
-def purchase_list(request):
-    if request.method == 'POST':
-        data = Purchase.objects.all()
-        print('Purchase data : ', data)
-        response_data, page_data = paginate_data(Purchase, data, request)
-        count = 0
-        for data in page_data:
-            count += 1
-            response_data['data'].append({
-                'count' : count,
-                'id' : data.id,
-                'supplier_name' : data.supplier.name,
-                'invoice_no' : data.invoice_no,
-                'medicine_info' : data.medicine_info.name,
-                'batch_id' : data.batch_id,
-                'expire_date' : data.expire_date,
-                'total_quantity' : data.total_quantity,
-                'supplier_price' : data.supplier_price,
-                'total_price' : data.total_price,
-                'paid_amount' : data.paid_amount,
-                'due_amount' : data.due_amount,
-                'action' : ''
-            })
-        return JsonResponse(response_data)
-    return render(request, 'backend/main/purchase/purchase_list.html')
 
 def fetch_medicines_by_supplier(request):
     supplier_id = request.GET.get('supplier_id')
     print('supplier id : ', supplier_id)
     if supplier_id:
-        # Filter medicines based on the supplier ID
         medicines = Medicine.objects.filter(supplier_name__id=supplier_id)
         
-        # Prepare a list of medicine data to return
         medicine_list = [
             {"id": medicine.id, "name": medicine.name}
             for medicine in medicines
@@ -311,10 +282,51 @@ def fetch_medicines_by_supplier(request):
         print('medicine list : ', medicine_list)
         return JsonResponse({"medicines": medicine_list})
     
-    # If no supplier ID is provided, return an empty list
     return JsonResponse({"medicines": []})
 
+def purchase_print(request, invoice_no):
+    context = {}
+    invoices = Purchase.objects.filter(invoice_no=invoice_no)
+    print('purchase invoice : ', invoices)
 
+    if invoices.exists():
+        first_invoice = invoices.first()
+        supplier = first_invoice.supplier  
+        supplier_name = supplier.name if supplier else "N/A"
+        supplier_phone = supplier.phone_no if supplier else "N/A"
+        supplier_address = supplier.address if supplier else "N/A"
+        created_at = first_invoice.created_at.strftime('%Y-%m-%d')
+
+        invoice_items = []
+        sub_total = 0
+        for item in invoices:
+            invoice_items.append({
+                'medicine_name': item.medicine_info.name if item.medicine_info else "N/A",
+                'quantity': getattr(item, 'box_quantity', 0),
+                'supplier_price': getattr(item, 'supplier_price', 0),
+                'total_price': getattr(item, 'total_price', 0),
+            })
+            sub_total += item.total_price
+            paid_amount = item.paid_amount
+            due_amount = item.due_amount
+
+        # Context data
+        context = {
+            'invoice_no': invoice_no,
+            'user_name': request.user.name,
+            'user_phone': request.user.phone_no,
+            'supplier_name': supplier_name,
+            'supplier_phone': supplier_phone,
+            'supplier_address': supplier_address,
+            'created_at': created_at,
+            'invoice_items': invoice_items,
+            'sub_total': sub_total,
+            'paid_amount': paid_amount,
+            'due_amount': due_amount,
+            'today_date': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        }
+
+    return render(request, 'backend/main/purchase/purchase_print.html', context=context)
 
 
 

@@ -12,6 +12,7 @@ from apps.payment.models import Payment
 from apps.supplier.models import Supplier
 from apps.invoice.models import Invoice
 from datetime import datetime
+from django.contrib import messages
 
 def generate_invoice_no():
     # Get the current year (last two digits) and month
@@ -20,7 +21,7 @@ def generate_invoice_no():
 
     # Retrieve the last Payment object's ID, default to 0 if no payments exist
     try:
-        last_payment = Payment.objects.latest('id')
+        last_payment = Invoice.objects.latest('id')
         last_id = last_payment.id
     except Payment.DoesNotExist:
         last_id = 0
@@ -30,7 +31,7 @@ def generate_invoice_no():
     padded_id = str(new_id).zfill(8)  # Ensures the ID is always 8 digits
 
     # Return the generated invoice number
-    return f"{current_year}{current_month}{padded_id}"
+    return f"IN-{current_year}{current_month}{padded_id}"
 
 # Create your views here.
 def invoice_list(request):
@@ -41,6 +42,7 @@ def invoice_list(request):
         count = 0
         for data in page_data:
             count += 1
+            action_html = f'<a href="/invoice/invoice_print/{data.invoice_no}/" style="margin-right: 5px; font-size: 22px;"><i class="fas fa-eye"></i></a>'
             response_data['data'].append({
                 'count' : count,
                 'id' : data.id,
@@ -52,7 +54,7 @@ def invoice_list(request):
                 'total_price' : data.total_price,
                 'paid_amount' : data.paid_amount,
                 'due_amount' : data.due_amount,
-                'action' : ''
+                'action' : mark_safe(action_html)
             })
         return JsonResponse(response_data)
     return render(request, 'backend/main/invoice/invoice_list.html')
@@ -72,6 +74,7 @@ def invoice_add(request):
         'transaction_type': 'invoice'
     }
     # print('purchase sessionkey : ', request.session.session_key)
+    # messages.success(request, 'Invoice added successfully')
     return render(request, 'backend/main/invoice/add_invoice.html', context=context)
 
 def save_invoice_data(request):
@@ -145,3 +148,46 @@ def save_invoice_data(request):
 
     # If not a POST request, return an error
     return JsonResponse({"status": "error", "message": "Invalid request method."})
+
+def invoice_print(request, invoice_no):
+    context = {}
+    invoices = Invoice.objects.filter(invoice_no=invoice_no)
+    print('invoice invoice : ', invoices)
+
+    if invoices.exists():
+        first_invoice = invoices.first()
+        customer_name = first_invoice.customer_name  
+        created_at = first_invoice.created_at.strftime('%Y-%m-%d')
+
+        invoice_items = []
+        sub_total = 0
+        for item in invoices:
+            invoice_items.append({
+                'medicine_name': item.medicine_info.name if item.medicine_info else "N/A",
+                'medicine_expire': item.medicine_info.expire_date if item.medicine_info else "N/A",
+                'quantity': getattr(item, 'box_quantity', 0),
+                'supplier_price': getattr(item, 'supplier_price', 0),
+                'total_price': getattr(item, 'total_price', 0),
+            })
+            sub_total += item.total_price
+            paid_amount = item.paid_amount
+            due_amount = item.due_amount
+
+        # Context data
+        context = {
+            'invoice_no': invoice_no,
+            'user_name': request.user.name,
+            'user_phone': request.user.phone_no,
+            'customer_name': customer_name,
+            'created_at': created_at,
+            'invoice_items': invoice_items,
+            'sub_total': sub_total,
+            'paid_amount': paid_amount,
+            'due_amount': due_amount,
+            'today_date': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        }
+
+    return render(request, 'backend/main/invoice/invoice_print.html', context=context)
+
+
+

@@ -5,4 +5,5 @@ urlpatterns = [
     path('', invoice_list, name="ivnoice_list"),
     path("add/", invoice_add, name="add_invoice"),
     path('save_invoice_data/', save_invoice_data, name='save_invoice_data'),
+    path('invoice_print/<str:invoice_no>/', invoice_print, name='invoice_print'),
 ]

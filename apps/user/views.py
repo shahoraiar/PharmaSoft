@@ -42,8 +42,6 @@ def user_list(request):
 def user_add(request):
     context = {}
     roles = Role.objects.all()  
-    # for role in roles:
-    #     print('roles : ', role.name)
     if request.method == 'POST':
         form = UserAddForm(request.POST)
         if form.is_valid():
@@ -61,30 +59,6 @@ def user_add(request):
     context['roles'] = roles
     return render(request, 'backend/system/user/user_add.html', context=context)
 
-# def login(request):
-#     context = {}
-
-#     if request.method == 'POST':
-#         email = request.POST.get('email')
-#         password = request.POST.get('password')
-#         print(f'email: {email} password: {password}')
-
-#         user = authenticate_user(request, email=email, password=password)
-#         print(user)
-        
-#         if user is not None:
-#             request.session['logged_in_pass'] = True
-#             system_login(request, user)  # Assuming you have a system_login function for post-login actions
-#             return redirect('dashboard')  # Redirect to the dashboard after successful login
-#         else:
-#             context['error'] = 'Invalid email or password'
-#             # Add error to the context for each field
-#             context['email_error'] = 'Invalid email or email not found' if 'email not found' in context.get('error', '') else ''
-#             context['password_error'] = 'Invalid password' if 'password wrong' in context.get('error', '') else ''
-#             print('error:', context['error'])
-
-#     return render(request, 'frontend/user_auth/signin1.html', context)
-
 def login(request):
     print('login sessionkey : ', request.session.session_key)
     context={}
@@ -98,12 +72,10 @@ def login(request):
         if user is not None:
             request.session['logged_in_pass'] = True
             system_login(request, user)
-            messages.success(request, 'Wellcome To Medicine List')
-            return redirect('medicine_list')  
+            messages.success(request, 'Wellcome To Dashboard')
+            return redirect('dashboard')   
         else:
-            messages.error(request, 'Email or Password wrong')
-            context['error'] = 'Invalid email or password'
-            print('error : ', context['error'])
+            print('login error : ')
     return render(request, 'frontend/user_auth/signin.html', context=context)
 
 def logout_view(request):

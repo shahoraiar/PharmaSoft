@@ -90,6 +90,7 @@
                     <input type="hidden" id="hidden_paid_amount" name="paid_amount">
                     <input type="hidden" id="hidden_due_amount" name="due_amount">
                     <input type="hidden" id="" name="transaction_type" value="{{ transaction_type }}">
+                    <input type="hidden" id="" name="billing_type" value="invoice">
 
                     <div class="card-footer d-flex justify-content-end">
                         <a href="" class="btn btn-primary mr-2" id="payment_btn">Payment</a>
@@ -103,12 +104,74 @@
 {% endblock content %}
 
 {% block extra_js %}
+
 <script>
+    // Function to validate input fields
+    function validateField(fieldId, errorMessage) {
+        const field = document.getElementById(fieldId);
+        const formGroup = field.closest('.form-group'); // Find the parent form group
+        
+        // Remove any previous error messages
+        const existingError = formGroup.querySelector('.error-message');
+        if (existingError) {
+            existingError.remove();
+        }
+        field.classList.remove('is-invalid'); // Remove any previous error styles
+
+        // Check if the field is valid
+        if (field.value.trim() === "") {
+            // Add error message
+            const errorElement = document.createElement('div');
+            errorElement.className = 'error-message text-danger mt-1';
+            errorElement.textContent = errorMessage;
+            formGroup.appendChild(errorElement);
+
+            // Highlight the field
+            field.classList.add('is-invalid');
+            return false;
+        }
+        return true;
+    }
+
+    // Handle Payment Button Click
+    document.getElementById('payment_btn').addEventListener('click', function (e) {
+        e.preventDefault();
+
+        const isPaymentTypeValid = validateField('payment_type', 'Please select a payment type.');
+
+        // Only submit the form if all validations pass
+        if (isPaymentTypeValid) {
+            const form = document.getElementById('purchase_form');
+            form.action = "{% url 'purchase_process' %}";
+            form.target = "_blank"; 
+            form.submit();
+        }
+    });
+
+    // Handle Save Purchase Button Click
+    document.getElementById('save_btn').addEventListener('click', function (e) {
+        e.preventDefault();
+
+        const isPaymentTypeValid = validateField('payment_type', 'Please select a payment type.');
+
+        // Only submit the form if all validations pass
+        if (isPaymentTypeValid) {
+            const form = document.getElementById('purchase_form');
+            form.action = "{% url 'save_purchase_data' %}";
+            form.submit();
+        }
+    });
+</script>
+
+
+
+<!-- <script>
     // Handle Payment Button Click
     document.getElementById('payment_btn').addEventListener('click', function (e) {
         e.preventDefault();
         const form = document.getElementById('purchase_form');
         form.action = "{% url 'purchase_process' %}";
+        form.target = "_blank"; 
         form.submit();
     });
 
@@ -119,7 +182,7 @@
         form.action = "{% url 'save_invoice_data' %}";
         form.submit();
     });
-</script>
+</script> -->
 <script>
    
 
