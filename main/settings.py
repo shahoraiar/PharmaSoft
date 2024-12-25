@@ -26,6 +26,7 @@ SECRET_KEY = "django-insecure-+uu)f4l(=rj-v#um-$4vb9s5l2l)ngmlmlt#b9rms7kf!d2yq^
 DEBUG = True
 
 ALLOWED_HOSTS = ['*']
+CSRF_TRUSTED_ORIGINS = ['https://pharmasoft.onrender.com']
 
 
 # Application definition
