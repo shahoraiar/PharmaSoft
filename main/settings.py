@@ -132,10 +132,13 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
-
+print('base dir : ', BASE_DIR)
 STATIC_URL = "static/"
-STATIC_ROOT = BASE_DIR / "static"
+# STATIC_ROOT = BASE_DIR / "static"
+# print('static root : ', STATIC_ROOT)
 STATICFILES_DIRS = [BASE_DIR / "static"]
+print('static files dirs : ', STATICFILES_DIRS)
+# H:\4 1\IPL Lab/project/PharmaSoft/static
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
