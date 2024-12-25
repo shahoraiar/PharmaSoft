@@ -3,7 +3,7 @@ from apps.dashboard.views import dashboard, medicine_monthly_counts
 from apps.user.views import login, logout_view
 from apps.purchase.views import purchase_success_view
 urlpatterns = [
-    path("dashboard/", dashboard, name="dashboard"),
+    path("", dashboard, name="dashboard"),
     path("medicine_monthly_chart/", medicine_monthly_counts, name="medicine_monthly_chart"),
     path("user/", include('apps.user.urls')),
     path("login/", login, name='login'),
