@@ -137,8 +137,8 @@ print('base dir : ', BASE_DIR)
 STATIC_URL = "static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 print('static files dirs : ', STATICFILES_DIRS)
-# STATIC_ROOT = BASE_DIR / "static"
-# print('static root : ', STATIC_ROOT)
+STATIC_ROOT = BASE_DIR / "collect_static"
+print('static root : ', STATIC_ROOT)
 # H:\4 1\IPL Lab/project/PharmaSoft/static
 # static files dirs :  [WindowsPath('H:/4 1/IPL Lab/project/PharmaSoft/static')]
 # base dir :  H:\4 1\IPL Lab\project\PharmaSoft
