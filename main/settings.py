@@ -63,7 +63,7 @@ MIDDLEWARE = [
 
 SESSION_ENGINE = "django.contrib.sessions.backends.db"
 
-NO_AUTH = ['login', 'purchase/success', 'purchase_process', 'purchase_success_view']
+NO_AUTH = ['login', 'purchase/success', 'purchase_process', 'purchase_success_view', 'payment_cancel', 'payment_fail']
 
 AUTH_USER_MODEL = 'user.User'
 
@@ -149,5 +149,4 @@ print('static root : ', STATIC_ROOT)
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-DOMAIN_NAME = os.getenv('DOMAIN_NAME', 'http://127.0.0.1:8000')
-print('DOMAIN_NAME : ', DOMAIN_NAME)
+

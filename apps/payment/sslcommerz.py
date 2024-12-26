@@ -6,7 +6,8 @@ from .models import PaymentGateWaySettings
 from apps.payment.models import Payment
 from django.shortcuts import render, redirect
 from django.conf import settings as django_settings
-
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib import messages 
 
 def sslcommerz_payment_gateway_purchase(request, transaction_data):
     gateway_auth_details = PaymentGateWaySettings.objects.order_by('id')[1]
@@ -16,7 +17,8 @@ def sslcommerz_payment_gateway_purchase(request, transaction_data):
         'issandbox': True
     }
     sslcommez = SSLCOMMERZ(settings)
-
+    base_url = get_base_url(request)
+    print('base_url : ', base_url)
     print('transaction data : ', transaction_data)
     post_body = {}
     post_body['total_amount'] = transaction_data['paid_amount']
@@ -25,9 +27,9 @@ def sslcommerz_payment_gateway_purchase(request, transaction_data):
     # post_body['success_url'] = f"http://127.0.0.1:8000/purchase/success/?value_e={transaction_data['transaction_id']}&value_f={transaction_data['payment_type']}&value_g={transaction_data['billing_type']}"
     # post_body['fail_url'] = 'http://127.0.0.1:8000/user/'
     # post_body['cancel_url'] = 'http://127.0.0.1:8000/'
-    post_body['success_url'] = f"{django_settings.DOMAIN_NAME}/purchase/success/?value_e={transaction_data['transaction_id']}&value_f={transaction_data['payment_type']}&value_g={transaction_data['billing_type']}"
-    post_body['fail_url'] = f"{django_settings.DOMAIN_NAME}/"
-    post_body['cancel_url'] = f"{django_settings.DOMAIN_NAME}/"
+    post_body['success_url'] = f"{base_url}/purchase/success/?value_e={transaction_data['transaction_id']}&value_f={transaction_data['payment_type']}&value_g={transaction_data['billing_type']}"
+    post_body['fail_url'] = f"{base_url}/payment/cancel/"
+    post_body['cancel_url'] = f"{base_url}/payment/fail/"
 
     post_body['emi_option'] = 0
     post_body['cus_email'] = 'shahora@gmail.com'  # Retrieve email from the current user session
@@ -57,6 +59,24 @@ def sslcommerz_payment_gateway_purchase(request, transaction_data):
     # print('response : ', response)
     # return response["GatewayPageURL"]
     return 'https://sandbox.sslcommerz.com/gwprocess/v4/gw.php?Q=pay&SESSIONKEY=' + response["sessionkey"]
+
+@csrf_exempt
+def payment_cancel(request):
+    print('-'*15 + 'payment_cancel' + '-'*15)
+    messages.error(request, 'Payment Cancelled')
+    return redirect('dashboard')
+
+@csrf_exempt
+def payment_fail(request):
+    print('-'*15 + 'payment_fail' + '-'*15)
+    messages.error(request, 'Payment Failed')
+    return redirect('dashboard')
+
+def get_base_url(request):
+    if request.get_host() == "127.0.0.1:8000":  # Localhost
+        return "http://127.0.0.1:8000"
+    else:  # Production domains
+        return "https://pharmasoft.pythonanywhere.com"
 
 
 
