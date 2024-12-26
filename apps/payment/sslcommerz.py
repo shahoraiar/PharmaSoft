@@ -5,6 +5,7 @@ from sslcommerz_lib import SSLCOMMERZ
 from .models import PaymentGateWaySettings
 from apps.payment.models import Payment
 from django.shortcuts import render, redirect
+from django.conf import settings as django_settings
 
 
 def sslcommerz_payment_gateway_purchase(request, transaction_data):
@@ -21,10 +22,13 @@ def sslcommerz_payment_gateway_purchase(request, transaction_data):
     post_body['total_amount'] = transaction_data['paid_amount']
     post_body['currency'] = "BDT"
     post_body['tran_id'] = transaction_data['transaction_id']
-    # post_body['success_url'] = 'http://127.0.0.1:8000/purchase/success/'
-    post_body['success_url'] = f"http://127.0.0.1:8000/purchase/success/?value_e={transaction_data['transaction_id']}&value_f={transaction_data['payment_type']}&value_g={transaction_data['billing_type']}"
-    post_body['fail_url'] = 'http://127.0.0.1:8000/user/'
-    post_body['cancel_url'] = 'http://127.0.0.1:8000/dahboard/'
+    # post_body['success_url'] = f"http://127.0.0.1:8000/purchase/success/?value_e={transaction_data['transaction_id']}&value_f={transaction_data['payment_type']}&value_g={transaction_data['billing_type']}"
+    # post_body['fail_url'] = 'http://127.0.0.1:8000/user/'
+    # post_body['cancel_url'] = 'http://127.0.0.1:8000/'
+    post_body['success_url'] = f"{django_settings.DOMAIN_NAME}/purchase/success/?value_e={transaction_data['transaction_id']}&value_f={transaction_data['payment_type']}&value_g={transaction_data['billing_type']}"
+    post_body['fail_url'] = f"{django_settings.DOMAIN_NAME}/"
+    post_body['cancel_url'] = f"{django_settings.DOMAIN_NAME}/"
+
     post_body['emi_option'] = 0
     post_body['cus_email'] = 'shahora@gmail.com'  # Retrieve email from the current user session
     post_body['cus_phone'] = '01739935012'  # Retrieve phone from the current user session
