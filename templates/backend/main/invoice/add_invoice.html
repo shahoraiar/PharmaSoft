@@ -157,7 +157,7 @@
         // Only submit the form if all validations pass
         if (isPaymentTypeValid) {
             const form = document.getElementById('purchase_form');
-            form.action = "{% url 'save_purchase_data' %}";
+            form.action = "{% url 'save_invoice_data' %}";
             form.submit();
         }
     });

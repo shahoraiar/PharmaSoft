@@ -175,29 +175,9 @@
 
                 </li>
 
-
-                <!-- <li class="sidebar-item  has-sub">
-                    <a href="#" class='sidebar-link'>
-                        <i data-feather="file-text" width="20"></i>
-                        <span>Stock</span>
-                    </a>
-
-                    <ul class="submenu ">
-
-                        <li>
-                            <a href="#">Stock Report</a>
-                        </li>
-
-                        <li>
-                            <a href="#">Available Stock</a>
-                        </li>
-                    </ul>
-
-                </li> -->
-
+                {% if user_role_slug != 'seller' %}
+                     
                 <li class='sidebar-title'>Auth User</li>
-
-
 
                 <li class="sidebar-item  has-sub">
                     <a href="#" class='sidebar-link'>
@@ -229,6 +209,8 @@
                     </ul>
 
                 </li>
+
+                {% endif %}
 
             </ul>
         </div>

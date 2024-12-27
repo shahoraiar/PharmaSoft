@@ -31,4 +31,22 @@ class UserAddForm(forms.ModelForm):
         
         return cleaned_data
     
+class UserEditForm(forms.ModelForm):
+    username = forms.CharField(required=False)
+    phone_no = forms.CharField(required=False)
+    password = forms.CharField(required=False)
+    status = forms.CharField(required=False)
+
+    class Meta:
+        model = User
+        fields = ['username', 'password', 'phone_no', 'status']
+    
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        # if self.cleaned_data['password']: 
+            # user.set_password(self.cleaned_data['password'])
+        if commit:
+            user.save()
+        return user
+    
     

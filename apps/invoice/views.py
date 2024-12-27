@@ -62,7 +62,7 @@ def invoice_list(request):
 def invoice_add(request):
     context={}
     # print('purchase sessionkey : ', request.session.session_key)
-    medicines = Medicine.objects.all()
+    medicines = Medicine.objects.filter(stock__gt=0)
     leaf = Leaf.objects.all()
     invoice_no = generate_invoice_no()
     payment_types = {'1':'handcash', '2':'sslcommerz'}
@@ -81,6 +81,7 @@ def save_invoice_data(request):
     if request.method == "POST":
         # Retrieve form data from the request
         customer_name = request.POST.get("name")
+        print('customer name : ', customer_name)
         invoice_no = request.POST.get("invoice_no")
         details = request.POST.get("details")
         payment_type = request.POST.get("payment_type")

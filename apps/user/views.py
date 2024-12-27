@@ -5,7 +5,7 @@ from django.http import JsonResponse
 from django.utils.safestring import mark_safe
 from django.contrib import messages
 from apps.user.models import User
-from apps.user.forms import UserAddForm
+from apps.user.forms import UserAddForm, UserEditForm
 from apps.permission.forms import RoleAddForm
 from django.contrib.auth import login as system_login 
 from system.auth import authenticate_user
@@ -14,8 +14,12 @@ from django.contrib.auth import logout
 # Create your views here.
 def user_list(request):
     if request.method == 'POST':
+        search_string = request.POST.get('search_string', '').strip() 
         data = User.objects.all()
         # print('user data : ', data)
+        # Apply search filter if a search term is provided
+        if search_string:
+            data = User.objects.search_by_data(search_string)
         print('thread local user : ', _thread_local)
         print('thread local user : ', _thread_local.user)
         print('thread local user : ', _thread_local.user.id) 
@@ -23,6 +27,9 @@ def user_list(request):
         count = 0
         for data in page_data:
             count += 1
+            action_html = f'<a href="/user/edit/{data.id}" style="margin-right: 5px; font-size: 22px;"><i class="fas fa-edit"></i></a>'            
+            # Delete link with a space before and after
+            action_html += f'<a href="/user/delete/{data.id}" style="margin-left: 5px; font-size: 22px;"><i class="fa-solid fa-trash"></i></a>'
             status_html = 'InActivate'
             if data.status=='1':
                 status_html = 'Activate'
@@ -34,7 +41,7 @@ def user_list(request):
                 'phone' : data.phone_no,
                 'user_role' : data.user_role_name,
                 'status' : mark_safe(status_html),
-                'action' : ''
+                'action' : mark_safe(action_html),
             })
         return JsonResponse(response_data)
     return render(request, 'backend/system/user/user_list.html')
@@ -58,6 +65,34 @@ def user_add(request):
     context['form'] = form
     context['roles'] = roles
     return render(request, 'backend/system/user/user_add.html', context=context)
+
+def user_edit(request, id=None):
+    context = {}
+    user = get_object_or_404(User, id=id) if id else None
+    
+    if request.method == 'POST':
+        form = UserEditForm(request.POST, instance=user)
+        if form.is_valid():
+            print('edit : ', form.cleaned_data)
+            form.save()  
+            messages.success(request, f'User "{user.name}" has been edit successfully.')
+            return redirect('user_list') 
+    else:
+        form = UserEditForm(instance=user)  
+        
+    context['form'] = form
+    context['user'] = user
+    context['user_data'] = User.objects.all()  
+    
+    return render(request, 'backend/system/user/edit.html', context)
+
+def user_delete(request, id=None):
+    print('id : ', id)
+    if id:
+        user = get_object_or_404(User, id=id)
+        user.delete()
+        messages.success(request, f'User "{user.name}" has been successfully deleted.')
+    return redirect('user_list')
 
 def login(request):
     print('login sessionkey : ', request.session.session_key)
@@ -152,10 +187,7 @@ def role_edit(request, id=None):
 def role_delete(request, id=None):
     if id:
         role = get_object_or_404(Role, id=id)
-        
         role.delete()
-        
         messages.success(request, f'Role "{role.name}" has been successfully deleted.')
-
     return redirect('role_list')
    

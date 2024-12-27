@@ -3,8 +3,16 @@ from django.contrib.auth.models import AbstractBaseUser
 from apps.permission.models import Role
 from system.generic.models import BaseModel
 from django.utils.text import slugify
+from django.db.models import Q
 
-
+class UserManager(models.Manager):
+    def search_by_data(self, search_string):
+        return self.get_queryset().filter(
+            Q(username__icontains=search_string) |
+            Q(email__icontains=search_string) |
+            Q(phone_no__icontains=search_string) 
+        )
+    
 class User(AbstractBaseUser, BaseModel):
     class UserVerification(models.TextChoices):
         YES = 'yes'
@@ -33,6 +41,8 @@ class User(AbstractBaseUser, BaseModel):
 
     class Meta:
         db_table = "user"
+
+    objects = UserManager()
 
     def __str__(self):
         return self.username

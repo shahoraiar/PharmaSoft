@@ -1,7 +1,15 @@
 from django.db import models
 from system.generic.models import BaseModel
 from apps.user.models import User
+from django.db.models import Q
 # Create your models here.
+class SupplierManager(models.Manager):
+    def search_by_data(self, search_string):
+        return self.get_queryset().filter(
+            Q(name__icontains=search_string) |
+            Q(email__icontains=search_string) |
+            Q(phone_no__icontains=search_string) 
+        )
 class Supplier(BaseModel):
     name = models.CharField(max_length=255, blank=True, null=True)
     phone_no = models.CharField(max_length=255, blank=True, null=True, unique=True)
@@ -20,3 +28,5 @@ class Supplier(BaseModel):
     
     class Meta:
         db_table = 'supplier'
+
+    objects = SupplierManager()

@@ -11,12 +11,12 @@ class SupplierForm(forms.ModelForm):
     city = forms.CharField(required=True)
     state = forms.CharField(required=True)
     zip = forms.CharField(required=True)
-    balance = forms.DecimalField(required=True)
+    balance = forms.DecimalField(required=False)
     
     class Meta:
         model = Supplier
         fields = '__all__'
-        exclude = ['status'] 
+        exclude = ['status', 'balance'] 
         
     def __init__(self, *args, **kwargs):
         # Extract the request object from kwargs
@@ -34,3 +34,20 @@ class SupplierForm(forms.ModelForm):
             cleaned_data['admin_id'] = None
 
         return cleaned_data
+    
+class SupplierEditForm(forms.ModelForm):
+    name = forms.CharField(required=False)
+    phone_no = forms.CharField(required=False)
+    email = forms.CharField(required=False)
+    status = forms.CharField(required=False)
+
+    class Meta:
+        model = Supplier
+        fields = ['name', 'phone_no', 'email', 'status']
+    
+    def save(self, commit=True):
+        supplier = super().save(commit=False)
+        if commit:
+            supplier .save()
+        return supplier 
+

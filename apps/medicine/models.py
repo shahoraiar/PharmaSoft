@@ -2,7 +2,16 @@ from django.db import models
 from system.generic.models import BaseModel
 from apps.user.models import User
 from apps.supplier.models import Supplier
+from django.db.models import Q
 # Create your models here.
+
+class MedicineManager(models.Manager):
+    def search_by_data(self, search_string):
+        return self.get_queryset().filter(
+            Q(name__icontains=search_string) |
+            Q(generic_name__icontains=search_string) |
+            Q(batch__icontains=search_string) 
+        )
 
 class Medicine(BaseModel):
     name = models.CharField(max_length=255, unique=True)
@@ -28,6 +37,8 @@ class Medicine(BaseModel):
     updated_by = models.IntegerField(default=0, blank=True, null=True)
     class Meta:
         db_table = 'medicine'
+
+    objects = MedicineManager()
 
 class Category(BaseModel): # Anti Allergic
     name = models.CharField(max_length=255, unique=True)

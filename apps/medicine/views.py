@@ -13,7 +13,7 @@ def medicine(request):
     if request.method == 'POST':
         data = Medicine.objects.all()
         print('Medicine data : ', data)
-        response_data, page_data = paginate_data(Category, data, request)
+        response_data, page_data = paginate_data(Medicine, data, request)
         count = 0
         for data in page_data:
             count += 1
@@ -24,6 +24,7 @@ def medicine(request):
                 'count' : count,
                 'id' : data.id,
                 'name' : data.name,
+                'batch' : data.batch,
                 'generic_name' : data.generic_name,
                 'strength' : data.strength,
                 'shelf' : data.shelf,
@@ -31,6 +32,7 @@ def medicine(request):
                 'category' : data.category.name,
                 'stock' : data.stock,
                 'status' : mark_safe(status_html),
+                'expire_date' : data.expire_date,
                 'action' : ''
             })
         return JsonResponse(response_data)
