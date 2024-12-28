@@ -13,7 +13,7 @@ def payment_list(request):
     if request.method == 'POST':
         data = Payment.objects.all()
         print('Payment data : ', data)
-        response_data, page_data = paginate_data(Category, data, request)
+        response_data, page_data = paginate_data(Payment, data, request)
         count = 0
         for data in page_data:
             count += 1

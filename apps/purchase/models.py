@@ -3,8 +3,16 @@ from system.generic.models import BaseModel
 from apps.medicine.models import Medicine, Leaf
 from apps.supplier.models import Supplier
 from apps.user.models import User
+from django.db.models import Q
 # Create your models here.
 
+class PurchaseManager(models.Manager):
+    def search_by_data(self, search_string):
+        return self.get_queryset().filter(
+            Q(supplier__name__icontains=search_string) |
+            Q(invoice_no__icontains=search_string) |
+            Q(batch_id__icontains=search_string) 
+        )
 class Purchase(BaseModel):
     supplier = models.ForeignKey(Supplier, on_delete=models.CASCADE, blank=True, null=True)
     invoice_no = models.CharField(max_length=255, blank=True, null=True)
@@ -35,3 +43,6 @@ class Purchase(BaseModel):
     
     class Meta:
         db_table = 'purchase'
+    objects = PurchaseManager()
+
+

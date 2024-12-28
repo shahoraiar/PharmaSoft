@@ -145,7 +145,9 @@ def save_invoice_data(request):
                 return JsonResponse({"status": "error", "message": f"Medicine with ID {medicine_names[i]} not found."})
 
         # Return a response after saving the data
-        return redirect('add_invoice')
+        # messages.success(request, 'Invoice added successfully')
+        return redirect('invoice_print', invoice_no=invoice_no)
+        # return redirect('add_invoice')
 
     # If not a POST request, return an error
     return JsonResponse({"status": "error", "message": "Invalid request method."})

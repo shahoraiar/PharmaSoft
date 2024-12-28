@@ -37,6 +37,8 @@ def user_list(request):
                 'count' : count,
                 'id' : data.id,
                 'name' : data.name,
+                'first_name' : data.first_name,
+                'last_name' : data.last_name,
                 'email' : data.email,
                 'phone' : data.phone_no,
                 'user_role' : data.user_role_name,

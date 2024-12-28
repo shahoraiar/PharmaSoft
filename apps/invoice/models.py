@@ -3,8 +3,16 @@ from system.generic.models import BaseModel
 from apps.medicine.models import Medicine, Leaf
 from apps.supplier.models import Supplier
 from apps.user.models import User
+from django.db.models import Q
 # Create your models here.
-
+class InvoiceManager(models.Manager):
+    def search_by_data(self, search_string):
+        return self.get_queryset().filter(
+            Q(customer_name__icontains=search_string) |
+            Q(invoice_no__icontains=search_string) |
+            Q(batch_id__icontains=search_string) 
+        )
+    
 class Invoice(BaseModel):
     customer_name = models.CharField(max_length=255, blank=True, null=True)
     invoice_no = models.CharField(max_length=255, blank=True, null=True)
@@ -35,3 +43,5 @@ class Invoice(BaseModel):
     
     class Meta:
         db_table = 'invoice'
+
+    objects = InvoiceManager()
