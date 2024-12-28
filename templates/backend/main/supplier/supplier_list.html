@@ -1,6 +1,20 @@
 {% extends 'backend/dashboard/main.html' %}
 {% load static %}
 
+{% block header_resource %}
+    
+<style>
+    tbody td:nth-child(2),
+    thead th:nth-child(2) {
+        position: sticky;
+        left: 0;
+        z-index: 1;
+        background-color: #f1f1f1;
+        /* background-color: #fdf7f7; */
+    }
+</style>
+    {% endblock %}
+
 {% block content %}
 
 <div class="container-xxl flex-grow-1 container-p-y">
@@ -40,8 +54,8 @@
                     "<'row'<'col-sm-5'i><'col-sm-7'p>>",
 
                 fixedColumns: {
-                    start: 1,
-                    end: 1
+                    start: 2,
+                    end: 2
                 },
                 scrollCollapse: true,
                 scrollX: true,

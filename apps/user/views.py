@@ -137,14 +137,18 @@ def role_json(request, *args, **kwargs):
             
             # Delete link with a space before and after
             action_html += f'<a href="/user/role/delete/{data.id}" style="margin-left: 5px; font-size: 22px;"><i class="fa-solid fa-trash"></i></a>'
-            
+            status_html = 'InActivate'
+            if data.status=='1':
+                status_html = 'Activate'
             response_data['data'].append({
                 'id' : data.id,
                 'name' : data.name,
                 'slug' : data.slug,
-                'status' : data.status,
-                'created_at' : data.created_at,
-                'updated_at' : data.updated_at,
+                'status' : mark_safe(status_html),
+                # 'created_at' : data.created_at,
+                # 'updated_at' : data.updated_at,
+                'created_at': data.created_at.strftime('%Y-%m-%d') if data.created_at else None,
+                'updated_at': data.updated_at.strftime('%Y-%m-%d') if data.updated_at else None,
                 'created_by' : data.created_by,
                 'updated_by' : data.updated_by,
                 'action' : mark_safe(action_html),

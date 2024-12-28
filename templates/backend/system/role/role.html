@@ -1,6 +1,20 @@
 {% extends 'backend/dashboard/main.html' %}
 {% load static %}
 
+{% block header_resource %}
+    
+<style>
+    tbody td:nth-child(2),
+    thead th:nth-child(2) {
+        position: sticky;
+        left: 0;
+        z-index: 1;
+        background-color: #f1f1f1;
+        /* background-color: #fdf7f7; */
+    }
+</style>
+    {% endblock %}
+
 {% block content %}
 
 <div class="container-xxl flex-grow-1 container-p-y">
@@ -64,9 +78,9 @@
                     { title: "Slug", data: "slug", "orderable": true, type: "string" },
                     { title: "Status", data: "status", "orderable": true, type: "string" },
                     { title: "Created At", data: "created_at", "orderable": true, type: "string" },
-                    { title: "Created By", data: "created_by", "orderable": true, type: "string" },
+                    // { title: "Created By", data: "created_by", "orderable": true, type: "string" },
                     { title: "Updated At", data: "updated_at", "orderable": true, type: "string" },
-                    { title: "Updated By", "data": "updated_by", "orderable": false },
+                    // { title: "Updated By", "data": "updated_by", "orderable": false },
                     { title: "Action", "data": "action", "orderable": false },
 
                 ],
