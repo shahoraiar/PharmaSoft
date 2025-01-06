@@ -14,12 +14,17 @@
                     </div>
                     <div class="card-body">
                         <div class="row">
-                            <div class="form-group col-md-12">
+                            <div class="form-group col-md-6">
                                 <div class="form-label text-uppercase">Unit Name <span class="text-danger">*</span></div>
-                                <input type="text" name="name" class="form-control required" placeholder="Unit Name(e.g BOX, Pack)">
+                                <input type="text" name="name" class="form-control required" placeholder="Unit Name(e.g BOX_10, Pack)">
                                 {% if errors %}
                                 <div class="text-danger">{{ errors.name.0 }}</div>
                                 {% endif %}
+                            </div>
+
+                            <div class="form-group col-md-6">
+                                <div class="form-label text-uppercase">Unit Quntity <span class="text-danger">*</span></div>
+                                <input type="text" name="unit_value" class="form-control required" placeholder="Unit Quantity(e.g 10)">
                             </div>
                             
                             <div class="form-group col-md-4 mb-0 mt-3"></div>

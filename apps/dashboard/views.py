@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from apps.supplier.models import Supplier
-from apps.medicine.models import Medicine
+from apps.medicine.models import Medicine, MedicineBatch
 from datetime import timedelta
 from django.utils.timezone import now
 from django.http import JsonResponse
@@ -45,11 +45,13 @@ def dashboard(request):
     )
 
     # out of stock medicines 
-    out_of_stock_medicines = Medicine.objects.filter(stock=0).count()
+    # out_of_stock_medicines = Medicine.objects.filter(stock=0).count()
+    out_of_stock_medicines = MedicineBatch.objects.filter(stock=0).count()
     print('out_of_stock_medicines : ', out_of_stock_medicines)
 
     # expired medicines 
-    expired_medicines = Medicine.objects.filter(expire_date__lt=now()).count()
+    # expired_medicines = Medicine.objects.filter(expire_date__lt=now()).count()
+    expired_medicines = MedicineBatch.objects.filter(expire_date__lt=now()).count()
     # Context
     context = {
         'tota_suppliers': suppliers,

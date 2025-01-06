@@ -1,6 +1,6 @@
 from django.db import models
 from system.generic.models import BaseModel
-from apps.medicine.models import Medicine, Leaf
+from apps.medicine.models import Medicine, MedicineBatch, Leaf
 from apps.supplier.models import Supplier
 from apps.user.models import User
 from django.db.models import Q
@@ -18,7 +18,7 @@ class Invoice(BaseModel):
     invoice_no = models.CharField(max_length=255, blank=True, null=True)
     details = models.TextField(blank=True, null=True)  # Removed max_length, since TextField doesn't require it
     payment_type = models.CharField(max_length=50, blank=True, null=True)  # You may consider using choices
-    medicine_info = models.ForeignKey(Medicine, on_delete=models.CASCADE, blank=True, null=True)
+    medicine_info = models.ForeignKey(MedicineBatch, on_delete=models.CASCADE, blank=True, null=True)
     batch_id = models.CharField(max_length=255, blank=True, null=True)
     expire_date = models.DateField(blank=True, null=True)
     leaf = models.ForeignKey(Leaf, on_delete=models.CASCADE, blank=True, null=True)

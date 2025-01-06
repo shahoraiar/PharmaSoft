@@ -205,13 +205,14 @@
         columns: [
             { title: "Medicine Name", data: "medicine_name", orderable: false },
             { title: "Batch ID", data: "batch_id", orderable: false },
-            { title: "Expire Date", data: "expire_date", orderable: true },
-            { title: "Box Pattern", data: "box_pattern", orderable: true },
-            { title: "Box Quantity", data: "box_quantity", orderable: true },
+            { title: "Expire Date", data: "expire_date", orderable: false },
+            { title: "Box Pattern", data: "box_units", orderable: false },
+            { title: "Box Quantity", data: "box_quantity", orderable: false },
+            { title: "Leaf Pattern", data: "leaf_units", orderable: false },
             { title: "Supplier Price", data: "supplier_price", orderable: false },
-            { title: "Box MRP", data: "box_mrp", orderable: true },
+            { title: "Box MRP", data: "box_mrp", orderable: false },
             { title: "Supplier Total", data: "total_quantity", orderable: false },
-            { title: "Total Price", data: "total_price", orderable: true },
+            { title: "Total Price", data: "total_price", orderable: false },
             {
                 title: "Action",
                 data: "action",
@@ -222,7 +223,7 @@
         pageLength: 10
     });
 
-    var medicineOptions = '<option value="">Select Medicine</option>';
+    var medicineOptions = '<option value="">Medicine Name</option>';
 
     function fetchMedicines(supplierId) {
         $.ajax({
@@ -248,9 +249,15 @@
 
     function addRow(isFirstRow = false) {
         var medicineDropdown = `<select name="medicine_name[]" class="form-control medicine-select">${medicineOptions}</select>`;
-        var boxPatternDropdown = `<select name="box_pattern[]" class="form-control">
-                                      <option value="">Select Box Pattern</option>
-                                      {% for pattern in leaf %}
+        var boxPatternDropdown = `<select name="box_units[]" class="form-control">
+                                      <option value="">Box Pattern</option>
+                                      {% for unit in box_units %}
+                                          <option value="{{ unit.id }}">{{ unit.name }}</option>
+                                      {% endfor %}
+                                  </select>`;
+        var leafPatternDropdown = `<select name="leaf_units[]" class="form-control">
+                                      <option value="">Leaf Pattern</option>
+                                      {% for pattern in leaf_units %}
                                           <option value="{{ pattern.id }}">{{ pattern.name }}</option>
                                       {% endfor %}
                                   </select>`;
@@ -263,8 +270,9 @@
             'medicine_name': medicineDropdown,
             'batch_id': '<input type="text" name="batch_id[]" class="form-control" />',
             'expire_date': '<input type="date" name="expire_date[]" class="form-control" />',
-            'box_pattern': boxPatternDropdown,
+            'box_units': boxPatternDropdown,
             'box_quantity': '<input type="number" name="box_quantity[]" class="form-control" />',
+            'leaf_units': leafPatternDropdown,
             'total_quantity': '<input type="number" name="total_quantity[]" class="form-control" readonly/>',
             'supplier_price': '<input type="number" name="supplier_price[]" class="form-control"/>',
             'box_mrp': '<input type="number" name="box_mrp[]" class="form-control"/>',

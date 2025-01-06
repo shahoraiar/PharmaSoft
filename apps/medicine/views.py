@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 from apps.medicine.forms import MedicinAddForm, CategoryForm, UnitForm, TypeForm, LeafForm
-from apps.medicine.models import Medicine, Category, Unit, Type, Leaf
+from apps.medicine.models import Medicine, Category, Unit, Type, Leaf, MedicineBatch
 from system.utils import paginate_data
 from django.http import JsonResponse
 from django.utils.safestring import mark_safe
@@ -8,6 +8,42 @@ from django.contrib import messages
 from apps.supplier.models import Supplier
 
 # Create your views here.
+
+def medicine_details(request):
+    print('call medicine details method : ', request.method)
+    if request.method == 'POST':
+        data = MedicineBatch.objects.all()
+        print('Medicine Batch data : ', data)
+        response_data, page_data = paginate_data(MedicineBatch, data, request)
+        count = 0
+        for data in page_data:
+            # print('medicine name : ', data.medicine.name)
+            count += 1
+            status_html = 'InActivate'
+            if data.status=='1':
+                status_html = 'Activate'
+            response_data['data'].append({
+                'count' : count,
+                'id' : data.id,
+                'medicine_name' : data.medicine.name,
+                'batch' : data.batch,
+                'expire_date' : data.expire_date,
+                'stock' : data.stock,
+                'stock_box' : data.stock/data.unit.unit_value,
+                'leaf_price' : data.box_mrp,
+                'per_pc_price' : data.box_mrp/data.leaf.quantity,
+                'box_mrp' : data.box_mrp,
+                'supplier_price' : data.supplier_price,
+                'box_quantity' : data.unit.unit_value,
+                'self' : data.medicine.shelf,
+                'medicine_category' : data.medicine.category.name,
+                'supplier_name' : data.supplier_name.name,
+                'status' : mark_safe(status_html),
+                'action' : ''
+            })
+        return JsonResponse(response_data)
+    return render(request, 'backend/main/medicine/medicine_details.html')
+
 
 def medicine(request):
     if request.method == 'POST':
@@ -24,15 +60,12 @@ def medicine(request):
                 'count' : count,
                 'id' : data.id,
                 'name' : data.name,
-                'batch' : data.batch,
                 'generic_name' : data.generic_name,
                 'strength' : data.strength,
                 'shelf' : data.shelf,
                 'supplier_name' : data.supplier_name.name,
                 'category' : data.category.name,
-                'stock' : data.stock,
                 'status' : mark_safe(status_html),
-                'expire_date' : data.expire_date,
                 'action' : ''
             })
         return JsonResponse(response_data)
@@ -126,6 +159,7 @@ def unit_list(request):
                 'count' : count,
                 'id' : data.id,
                 'name' : data.name,
+                'box_quantity' : data.unit_value,
                 'status' : mark_safe(status_html),
                 'action' : ''
             })

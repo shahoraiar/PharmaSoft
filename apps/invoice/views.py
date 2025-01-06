@@ -5,7 +5,7 @@ from system.utils import paginate_data
 from django.http import JsonResponse
 from django.utils.safestring import mark_safe
 from django.views.decorators.csrf import csrf_exempt
-from apps.medicine.models import Medicine, Leaf
+from apps.medicine.models import Medicine, Leaf, Unit, Category, Type, MedicineBatch
 import json
 from apps.payment.sslcommerz import sslcommerz_payment_gateway_purchase
 from apps.payment.models import Payment
@@ -21,7 +21,7 @@ def generate_invoice_no():
 
     # Retrieve the last Payment object's ID, default to 0 if no payments exist
     try:
-        last_payment = Invoice.objects.latest('id')
+        last_payment = Invoice.objects.latest('invoice_no') 
         last_id = last_payment.id
     except Payment.DoesNotExist:
         last_id = 0
@@ -48,7 +48,7 @@ def invoice_list(request):
                 'id' : data.id,
                 'customer_name' : data.customer_name,
                 'invoice_no' : data.invoice_no,
-                'medicine_info' : data.medicine_info.name,
+                'medicine_info' : data.medicine_info.medicine.name,
                 'quantity' : data.box_quantity,
                 'sell_price' : data.sell_price,
                 'total_price' : data.total_price,
@@ -62,21 +62,46 @@ def invoice_list(request):
 def invoice_add(request):
     context={}
     # print('purchase sessionkey : ', request.session.session_key)
-    medicines = Medicine.objects.filter(stock__gt=0)
+    medicines = MedicineBatch.objects.filter(stock__gt=0)
+    print('medicines : ', medicines)
+    medicine_name_batch_list = []
+    for med in medicines:
+        medicine_name = med.medicine.name
+        medicine_batch = med.batch
+        medicine_name_batch = {
+            'id': med.id,
+            'name': f'{medicine_name} - {medicine_batch}',
+        }
+        print('medicine_name_batch : ', medicine_name_batch)
+        medicine_name_batch_list.append(medicine_name_batch)
     leaf = Leaf.objects.all()
     invoice_no = generate_invoice_no()
     payment_types = {'1':'handcash', '2':'sslcommerz'}
     context = {
-        'medicines' : medicines,
+        'medicine_name_batch_list' : medicine_name_batch_list,
         'payment_type': payment_types,
         'invoice_no': invoice_no,
         'leaf': leaf,
         'transaction_type': 'invoice'
     }
-    # print('purchase sessionkey : ', request.session.session_key)
-    # messages.success(request, 'Invoice added successfully')
     return render(request, 'backend/main/invoice/add_invoice.html', context=context)
 
+def get_medicine_details(request):
+    medicine_id = request.GET.get('medicine_id')
+    print('get medicine details medicine id : ', medicine_id)
+    if not medicine_id:
+        return JsonResponse({'error': 'Medicine ID not provided'}, status=400)
+
+    try:
+        medicine_batch = MedicineBatch.objects.get(id=medicine_id)
+        data = {
+            'price': medicine_batch.box_mrp/medicine_batch.leaf.quantity,
+            'expire_date': medicine_batch.expire_date.strftime('%Y-%m-%d') if medicine_batch.expire_date else None,
+        }
+        return JsonResponse(data)
+    except MedicineBatch.DoesNotExist:
+        return JsonResponse({'error': 'Medicine not found'}, status=404)
+    
 def save_invoice_data(request):
     if request.method == "POST":
         # Retrieve form data from the request
@@ -102,32 +127,35 @@ def save_invoice_data(request):
         print("Due Amount:", due_amount)
 
         # Retrieve and prepare the medicines data
-        medicine_names = request.POST.getlist("medicine_name[]")
+        medicine_name_batch = request.POST.getlist("medicine_name[]")
+        # medicine_batch = 
         quantities = request.POST.getlist("quantity[]")
         prices = request.POST.getlist("price[]")
         total_prices = request.POST.getlist("total_price[]")
 
         # Debug: Print the received data
-        # print("medicine_names:", supplier_id)
-        # print("Invoice No:", invoice_no)
+        print("medicine_names:", medicine_name_batch)
+        print("total_prices :", total_prices)
         # print("Details:", details)
         # print("Payment Type:", payment_type)
-        # print("Medicine Quantity: ", box_quantity)
+        print("Medicine Quantity: ", quantities)
 
 
         # Store the purchase data
-        for i in range(len(medicine_names)):
+        for i in range(len(medicine_name_batch)):
             try:
                 # Get related Medicine and Leaf objects
-                medicine = Medicine.objects.get(id=medicine_names[i])
+                medicine_obj = MedicineBatch.objects.get(id = medicine_name_batch[i])
+                medicine_name = medicine_obj.medicine.name
+                print('save invoice medicine name : ', medicine_name)
                 
-                # Create a new Purchase record
+        #         # Create a new Purchase record
                 invoice = Invoice(
                     customer_name=customer_name,
                     invoice_no=invoice_no,
                     details=details,
                     payment_type=payment_type,
-                    medicine_info=medicine,
+                    medicine_info=medicine_obj,
                     box_quantity=quantities[i],
                     sell_price=prices[i],
                     total_price=total_prices[i],
@@ -135,19 +163,19 @@ def save_invoice_data(request):
                     due_amount=due_amount
                 )
 
-                # Save the purchase to the database
+        #         # Save the purchase to the database
                 invoice.save()
 
-                medicine.stock -= int(quantities[i])
-                medicine.save()
-
-            except Medicine.DoesNotExist:
-                return JsonResponse({"status": "error", "message": f"Medicine with ID {medicine_names[i]} not found."})
+                medicine_obj.stock -= int(quantities[i])
+                medicine_obj.save()
+                messages.success(request, "Invoice Add Successfully")
+            except medicine_obj.DoesNotExist:
+                return JsonResponse({"status": "error", "message": f"Medicine with ID {medicine_name_batch[i]} not found."})
 
         # Return a response after saving the data
         # messages.success(request, 'Invoice added successfully')
-        return redirect('invoice_print', invoice_no=invoice_no)
-        # return redirect('add_invoice')
+        # return redirect('invoice_print', invoice_no=invoice_no)
+        return redirect('add_invoice')
 
     # If not a POST request, return an error
     return JsonResponse({"status": "error", "message": "Invalid request method."})
@@ -166,7 +194,7 @@ def invoice_print(request, invoice_no):
         sub_total = 0
         for item in invoices:
             invoice_items.append({
-                'medicine_name': item.medicine_info.name if item.medicine_info else "N/A",
+                'medicine_name': item.medicine_info.medicine.name if item.medicine_info else "N/A",
                 'medicine_expire': item.medicine_info.expire_date if item.medicine_info else "N/A",
                 'quantity': getattr(item, 'box_quantity', 0),
                 'supplier_price': getattr(item, 'supplier_price', 0),

@@ -70,11 +70,12 @@ class CategoryForm(forms.ModelForm):
     
 class UnitForm(forms.ModelForm):
     name = forms.CharField(required=True)
+    unit_value = forms.IntegerField(required=True)
     status = forms.CharField(required=False) 
 
     class Meta:
         model = Unit
-        fields = ['name', 'status']  
+        fields = ['name', 'unit_value', 'status']  
 
     def __init__(self, *args, **kwargs):
         self.request = kwargs.pop('request', None)

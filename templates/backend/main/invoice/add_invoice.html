@@ -163,29 +163,132 @@
     });
 </script>
 
+<script>
+    $(document).ready(function () {
+    var table = $('#purchase_table').DataTable({
+        dom: "<'row'<'col-sm-12'tr>>",
+        scrollCollapse: true,
+        scrollX: true,
+        scrollY: true,
+        ordering: true,
+        serverSide: false,
+        data: [],
+        columns: [
+            { title: "Medicine Name", data: "medicine_name", orderable: false },
+            { title: "Quantity", data: "quantity", orderable: true },
+            { title: "Per Pc Price", data: "price", orderable: false },
+            { title: "Expire Date", data: "expire_date", orderable: false },
+            { title: "Total Price", data: "total_price", orderable: true },
+            {
+                title: "Action",
+                data: "action",
+                orderable: false,
+                defaultContent: ""
+            }
+        ],
+        pageLength: 10
+    });
+
+    function addRow(isFirstRow = false) {
+        var medicineDropdown = `<select name="medicine_name[]" class="form-control medicine-select">
+                                      <option value="">Select Medicine Name</option>
+                                      {% for med in medicine_name_batch_list %}
+                                          <option value="{{ med.id }}">{{ med.name }}</option>
+                                      {% endfor %}
+                                  </select>`;
+        var actionButtons = isFirstRow
+            ? '<button type="button" class="btn btn-success add-row">+</button>'
+            : '<button type="button" class="btn btn-success add-row">+</button> ' +
+              '<button type="button" class="btn btn-danger delete-row">-</button>';
+
+        table.row.add({
+            'medicine_name': medicineDropdown,
+            'quantity': '<input type="number" name="quantity[]" class="form-control" />',
+            'price': '<input type="number" name="price[]" class="form-control" readonly />',
+            'expire_date': '<input type="text" name="expire_date[]" class="form-control" readonly />',
+            'total_price': '<input type="number" name="total_price[]" class="form-control" readonly />',
+            'action': actionButtons
+        }).draw();
+    }
+
+    function updateTotals() {
+        let subTotal = 0;
+        $('#purchase_table tbody tr').each(function () {
+            var totalPrice = parseFloat($(this).find('input[name="total_price[]"]').val()) || 0;
+            subTotal += totalPrice;
+        });
+
+        $('#sub_total').text(subTotal.toFixed(2));
+        $('#hidden_sub_total').val(subTotal.toFixed(2));
+
+        var discount = parseFloat($('#discount').val()) || 0;
+        var grandTotal = subTotal - discount;
+
+        $('#grand_total').text(grandTotal.toFixed(2));
+        $('#hidden_grand_total').val(grandTotal.toFixed(2));
+
+        var paidAmount = parseFloat($('#paid_amount').val()) || 0;
+        var dueAmount = grandTotal - paidAmount;
+
+        $('#hidden_discount').val(discount.toFixed(2));
+        $('#hidden_paid_amount').val(paidAmount.toFixed(2));
+        $('#hidden_due_amount').val(dueAmount.toFixed(2));
+        $('#due_amount').text(dueAmount.toFixed(2));
+    }
+
+    $('#purchase_table').on('input', 'input[name="quantity[]"], input[name="price[]"]', function () {
+        var row = $(this).closest('tr');
+        var Quantity = parseFloat(row.find('input[name="quantity[]"]').val()) || 0;
+        var Price = parseFloat(row.find('input[name="price[]"]').val()) || 0;
+
+        var totalPrice = Quantity * Price;
+        row.find('input[name="total_price[]"]').val(totalPrice);
+
+        updateTotals();
+    });
+
+    $('#discount, #paid_amount').on('input', function () {
+        updateTotals();
+    });
+
+    $('#purchase_table').on('click', '.delete-row', function () {
+        table.row($(this).closest('tr')).remove().draw();
+        updateTotals();
+    });
+
+    $('#purchase_table').on('click', '.add-row', function () {
+        addRow();
+    });
+
+    // Add the first row without the delete button
+    addRow(true);
+
+    // Handle medicine selection
+    $('#purchase_table').on('change', '.medicine-select', function () {
+        var row = $(this).closest('tr');
+        var medicineId = $(this).val();
+
+        if (medicineId) {
+            $.ajax({
+                url: '/invoice/get_medicine_details/',
+                type: 'GET',
+                data: { medicine_id: medicineId },
+                success: function (response) {
+                    row.find('input[name="price[]"]').val(response.price || '');
+                    row.find('input[name="expire_date[]"]').val(response.expire_date || '');
+                },
+                error: function () {
+                    alert('Failed to fetch medicine details.');
+                }
+            });
+        }
+    });
+});
+
+</script>
 
 
 <!-- <script>
-    // Handle Payment Button Click
-    document.getElementById('payment_btn').addEventListener('click', function (e) {
-        e.preventDefault();
-        const form = document.getElementById('purchase_form');
-        form.action = "{% url 'purchase_process' %}";
-        form.target = "_blank"; 
-        form.submit();
-    });
-
-    // Handle Save Purchase Button Click
-    document.getElementById('save_btn').addEventListener('click', function (e) {
-        e.preventDefault();
-        const form = document.getElementById('purchase_form');
-        form.action = "{% url 'save_invoice_data' %}";
-        form.submit();
-    });
-</script> -->
-<script>
-   
-
    $(document).ready(function () {
     var table = $('#purchase_table').DataTable({
         dom: "<'row'<'col-sm-12'tr>>",
@@ -215,7 +318,7 @@
     function addRow(isFirstRow = false) {
         var medicineDropdown = `<select name="medicine_name[]" class="form-control">
                                       <option value="">Select Medicine Name</option>
-                                      {% for med in medicines %}
+                                      {% for med in medicine_name_batch_list %}
                                           <option value="{{ med.id }}">{{ med.name }}</option>
                                       {% endfor %}
                                   </select>`;
@@ -288,9 +391,6 @@
     addRow(true);
 });
 
-
-
-
-</script>
+</script> -->
 
 {% endblock extra_js %}

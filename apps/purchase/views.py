@@ -16,6 +16,8 @@ import string
 from django.contrib.auth.decorators import login_required
 from apps.user.models import User
 from django.contrib import messages
+from apps.medicine.models import Unit
+from apps.medicine.models import MedicineBatch
 # Create your views here.
 def generate_invoice_no():
     # Get the current year (last two digits) and month
@@ -68,7 +70,10 @@ def purchase_list(request):
 def add_purchase(request):
     context={}
     supplier = Supplier.objects.all()
-    leaf = Leaf.objects.all()
+    box_unit = Unit.objects.all()
+    for name in box_unit: 
+        print('unit name : ', name.name)
+    leaf_unit = Leaf.objects.all()
    
     invoice_no = generate_invoice_no() 
     payment_types = {'1':'handcash', '2':'sslcommerz'}
@@ -76,7 +81,8 @@ def add_purchase(request):
         'payment_type': payment_types,
         'suppliers': supplier,
         'invoice_no': invoice_no,
-        'leaf': leaf,
+        'box_units': box_unit,
+        'leaf_units': leaf_unit,
         'transaction_type': 'purchase'
     }
     print('purchase sessionkey : ', request.session.session_key)
@@ -195,8 +201,6 @@ def save_purchase_data(request):
         grand_total = request.POST.get("grand_total")
         paid_amount = request.POST.get("paid_amount")
         due_amount = request.POST.get("due_amount")
-        box_quantity = request.POST.get("box_quantity")
-        expire_date = request.POST.get("expire_date")
 
         # Debug: Print the received totals
         print("Sub Total:", sub_total)
@@ -209,62 +213,95 @@ def save_purchase_data(request):
         medicine_names = request.POST.getlist("medicine_name[]")
         batch_ids = request.POST.getlist("batch_id[]")
         expire_dates = request.POST.getlist("expire_date[]")
+        box_units = request.POST.getlist("box_units[]") 
+        # total_quantities = request.POST.getlist("total_quantity[]")
         box_quantities = request.POST.getlist("box_quantity[]")
-        total_quantities = request.POST.getlist("total_quantity[]")
+        leaf_units = request.POST.getlist("leaf_units[]") 
         supplier_prices = request.POST.getlist("supplier_price[]")
         box_mrps = request.POST.getlist("box_mrp[]")
         total_prices = request.POST.getlist("total_price[]")
-        details = request.POST.getlist("details[]")
+
 
         # Debug: Print the received data
-        print("Supplier ID:", supplier_id)
-        print("Invoice No:", invoice_no)
-        print("Details:", details)
+        print("Supplier ID : ", supplier_id)
+        print("medicine_names : ", medicine_names)
+        print("batch_ids : ", batch_ids)
+        print("expire_dates :", expire_dates)
+        print("box_units :", box_units)
+        print("box_quantities :", box_quantities)
+        print("leaf_units :", leaf_units)
+        print("supplier_prices :", supplier_prices)
+        print("box_mrps:", box_mrps)
+        print("total_prices:", total_prices)
         print("Payment Type:", payment_type)
-        print("Medicine Quantity: ", box_quantity)
 
-        # Try to get the Supplier object
+        # Get the supplier object
         try:
             supplier = Supplier.objects.get(id=supplier_id)
         except Supplier.DoesNotExist:
             return JsonResponse({"status": "error", "message": "Supplier not found."})
 
-        # Store the purchase data
+        # Process each medicine batch
         for i in range(len(medicine_names)):
             try:
                 medicine = Medicine.objects.get(id=medicine_names[i])
-                leaf = Leaf.objects.first() 
+                box_unit = Unit.objects.get(id=box_units[i])
+                leaf_unit = Leaf.objects.get(id=leaf_units[i])
+            except (Medicine.DoesNotExist, Unit.DoesNotExist, Leaf.DoesNotExist) as e:
+                return JsonResponse({"status": "error", "message": str(e)})
 
-                purchase = Purchase(
-                    supplier=supplier,
-                    invoice_no=invoice_no,
-                    details=details,
-                    payment_type=payment_type,
-                    medicine_info=medicine,
-                    batch_id=batch_ids[i],
+            # Calculate stock at the tablet level
+            box_quantity = int(box_quantities[i])
+            total_stock = box_quantity * box_unit.unit_value * leaf_unit.quantity
+
+            # Check if a batch exists for the medicine and batch_id
+            medicine_batch = MedicineBatch.objects.filter(
+                medicine=medicine,
+                batch=batch_ids[i]
+            ).first()
+
+            if medicine_batch:
+                # Update stock and expiry if batch exists
+                medicine_batch.stock += total_stock
+                medicine_batch.expire_date = expire_dates[i]  # Update expiry if necessary
+                medicine_batch.supplier_price = supplier_prices[i]
+                medicine_batch.box_mrp = box_mrps[i]
+                medicine_batch.save()
+            else:
+                # Create a new batch if it does not exist
+                MedicineBatch.objects.create(
+                    medicine=medicine,
+                    batch=batch_ids[i],
                     expire_date=expire_dates[i],
-                    leaf=leaf,
-                    box_quantity=box_quantities[i],
-                    total_quantity=total_quantities[i],
+                    stock=total_stock,
+                    supplier_name=supplier,
                     supplier_price=supplier_prices[i],
                     box_mrp=box_mrps[i],
-                    total_price=total_prices[i],
-                    paid_amount=paid_amount,
-                    due_amount=due_amount,
-                    admin_id = User.objects.get(id=request.user.id)
+                    leaf = leaf_unit, 
+                    unit = box_unit,
+                    admin_id=User.objects.get(id=request.user.id)
                 )
 
-                purchase.save()
+            # Save purchase record
+            purchase = Purchase(
+                supplier=supplier,
+                invoice_no=invoice_no,
+                details=details,
+                payment_type=payment_type,
+                medicine_info=medicine,
+                batch_id=batch_ids[i],
+                expire_date=expire_dates[i],
+                box_quantity=box_quantity,
+                supplier_price=supplier_prices[i],
+                box_mrp=box_mrps[i],
+                total_price=total_prices[i],
+                paid_amount=paid_amount,
+                due_amount=due_amount,
+                admin_id=User.objects.get(id=request.user.id)
+            )
+            purchase.save()
 
-                medicine.stock += int(total_quantities[i])
-                medicine.expire_date = expire_dates[i]
-                medicine.batch = batch_ids[i]
-                medicine.save()
-
-            except Medicine.DoesNotExist:
-                return JsonResponse({"status": "error", "message": f"Medicine with ID {medicine_names[i]} not found."})
-
-        return redirect('purchase_print', invoice_no=invoice_no)
+        return redirect("purchase_print", invoice_no=invoice_no)
 
     return JsonResponse({"status": "error", "message": "Invalid request method."})
 

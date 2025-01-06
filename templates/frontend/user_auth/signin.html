@@ -19,7 +19,7 @@
                         <div class="form-group position-relative has-icon-left">
                             <label for="email">Email</label>
                             <div class="position-relative">
-                                <input type="email" name="email" class="form-control" id="email">
+                                <input type="email" name="email" class="form-control" id="email" rquired>
                                 <div class="form-control-icon">
                                     <i data-feather="user"></i>
                                 </div>
@@ -79,6 +79,43 @@
             </div>
         </div>
     </div>
+
+    <div class="row mt-3">
+        <div class="col-md-8 mx-auto">
+            <div class="card login-card">
+                <div class="card-body">
+                    <h5 class="card-title">Sample Login Credentials</h5>
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Username</th>
+                                    <th>Password</th>
+                                    <th>Type</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>admin@pharmasoft.com</td>
+                                    <td>admin123</td>
+                                    <td>Admin</td>
+                                </tr>
+                                <tr>
+                                    <td>manager@pharmasoft.com</td>
+                                    <td>manager123</td>
+                                    <td>Manager</td>
+                                </tr>
+                                <tr>
+                                    <td>staff@pharmasoft.com</td>
+                                    <td>staff123</td>
+                                    <td>Staff</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
 </div>
 
 {% endblock %}

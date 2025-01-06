@@ -2,7 +2,8 @@ from django.urls import path
 from apps.medicine.views import *
 
 urlpatterns = [
-    path("", medicine, name="medicine_list"), # medicine
+    path("", medicine_details, name="medicine_details"), # medicine
+    path("list/", medicine, name="medicine_list"), # medicine
     path("add/", medicine_add, name="medicine_add"), 
     path("category", category, name="category_list"), 
     path("category/add/", category_add, name="category_add"),
